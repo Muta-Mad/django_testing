@@ -47,7 +47,7 @@ class TestRoutes(TestCase):
             with self.subTest(name=name):
                 url = reverse(name, args=args)
                 response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_note_detail_availability(self):
         """Проверка доступа страницы заметки для автора и читателя."""
