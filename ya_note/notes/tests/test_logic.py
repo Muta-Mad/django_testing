@@ -3,6 +3,7 @@ from http import HTTPStatus
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+
 from pytils.translit import slugify
 
 from notes.models import Note
@@ -88,7 +89,6 @@ class TestNoteEditDelete(TestCase):
         cls.original_title = cls.note.title
         cls.original_text = cls.note.text
         cls.original_slug = cls.note.slug
-    
         cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
         cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
         cls.form_data = {
