@@ -3,7 +3,6 @@ from http import HTTPStatus
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-
 from pytils.translit import slugify
 
 from notes.models import Note
@@ -51,11 +50,17 @@ class TestNoteCreation(TestCase):
 
     def test_duplicate_slug(self):
         """Проверка, нельзя создать заметку с дублирующимся slug."""
-        self.auth_client.post(self.url, data=self.form_data)
+        Note.objects.create(
+            title='Заголовок заметки',
+            text='Текст заметки',
+            slug='test-slug',
+            author=self.user,
+        )
         self.assertEqual(Note.objects.count(), 1)
         response = self.auth_client.post(self.url, data=self.form_data)
         self.assertFormError(
-            response, 'form', 'slug', [self.form_data['slug'] + WARNING])
+            response, 'form', 'slug', [self.form_data['slug'] + WARNING]
+        )
         self.assertEqual(Note.objects.count(), 1)
 
     def test_slug_auto_generation(self):
@@ -70,11 +75,10 @@ class TestNoteCreation(TestCase):
 
 
 class TestNoteEditDelete(TestCase):
-    NOTE_TITLE = 'Заголовок заметки'
-    NOTE_TEXT = 'Текст заметки'
 
     @classmethod
     def setUpTestData(cls):
+        """Создание тестовых данных для редактирования и удаления заметки."""
         cls.author = User.objects.create(username='Автор заметки')
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
@@ -84,11 +88,9 @@ class TestNoteEditDelete(TestCase):
         cls.note = Note.objects.create(
             title='Заголовок заметки',
             text='Текст заметки',
+            slug='test-slug',
             author=cls.author,
         )
-        cls.original_title = cls.note.title
-        cls.original_text = cls.note.text
-        cls.original_slug = cls.note.slug
         cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
         cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
         cls.form_data = {
@@ -98,7 +100,7 @@ class TestNoteEditDelete(TestCase):
         }
 
     def test_author_can_edit_note(self):
-        """Проверка, что автор может редактировать свою заметку."""
+        """Проверка, автор может редактировать свою заметку."""
         response = self.author_client.post(self.edit_url, data=self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
         self.note.refresh_from_db()
@@ -107,21 +109,29 @@ class TestNoteEditDelete(TestCase):
         self.assertEqual(self.note.slug, self.form_data['slug'])
 
     def test_author_can_delete_note(self):
-        """Проверка, что автор может удалить свою заметку."""
+        """Проверка, автор может удалить свою заметку."""
         response = self.author_client.post(self.delete_url)
         self.assertRedirects(response, reverse('notes:success'))
         notes_count = Note.objects.count()
         self.assertEqual(notes_count, 0)
 
     def test_other_user_cant_edit_note(self):
-        """Проверка, другой пользователь не может редачить чужую заметку."""
+        """Проверка, другой пользователь не может
+        редактировать чужую заметку.
+        """
+        old_note_data = {
+            'title': self.note.title,
+            'text': self.note.text,
+            'slug': self.note.slug,
+        }
         response = self.other_user_client.post(
-            self.edit_url, data=self.form_data)
+            self.edit_url, data=self.form_data
+        )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        self.note.refresh_from_db()
-        self.assertEqual(self.note.title, self.original_title)
-        self.assertEqual(self.note.text, self.original_text)
-        self.assertEqual(self.note.slug, self.original_slug)
+        after_edit_note = Note.objects.get(id=self.note.id)
+        self.assertEqual(after_edit_note.title, old_note_data['title'])
+        self.assertEqual(after_edit_note.text, old_note_data['text'])
+        self.assertEqual(after_edit_note.slug, old_note_data['slug'])
 
     def test_other_user_cant_delete_note(self):
         """Проверка, что другой пользователь не может удалить чужую заметку."""
