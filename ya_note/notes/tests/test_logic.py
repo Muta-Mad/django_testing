@@ -50,17 +50,17 @@ class TestNoteCreation(TestCase):
 
     def test_duplicate_slug(self):
         """Проверка, нельзя создать заметку с дублирующимся slug."""
-        Note.objects.create(
+        self.note = Note.objects.create(
             title='Заголовок заметки',
             text='Текст заметки',
             slug='test-slug',
             author=self.user,
         )
         self.assertEqual(Note.objects.count(), 1)
+        self.form_data['slug'] = self.note.slug
         response = self.auth_client.post(self.url, data=self.form_data)
         self.assertFormError(
-            response, 'form', 'slug', [self.form_data['slug'] + WARNING]
-        )
+            response, 'form', 'slug', [self.form_data['slug'] + WARNING])
         self.assertEqual(Note.objects.count(), 1)
 
     def test_slug_auto_generation(self):
@@ -119,19 +119,20 @@ class TestNoteEditDelete(TestCase):
         """Проверка, другой пользователь не может
         редактировать чужую заметку.
         """
-        old_note_data = {
-            'title': self.note.title,
-            'text': self.note.text,
-            'slug': self.note.slug,
-        }
+        original_note = Note.objects.get(id=self.note.id)
+        original_title = original_note.title
+        original_text = original_note.text
+        original_slug = original_note.slug
+        original_author = original_note.author
         response = self.other_user_client.post(
             self.edit_url, data=self.form_data
         )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        after_edit_note = Note.objects.get(id=self.note.id)
-        self.assertEqual(after_edit_note.title, old_note_data['title'])
-        self.assertEqual(after_edit_note.text, old_note_data['text'])
-        self.assertEqual(after_edit_note.slug, old_note_data['slug'])
+        updated_note = Note.objects.get(id=self.note.id)
+        self.assertEqual(updated_note.title, original_title)
+        self.assertEqual(updated_note.text, original_text)
+        self.assertEqual(updated_note.slug, original_slug,)
+        self.assertEqual(updated_note.author, original_author)
 
     def test_other_user_cant_delete_note(self):
         """Проверка, что другой пользователь не может удалить чужую заметку."""

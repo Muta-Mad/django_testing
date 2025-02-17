@@ -19,6 +19,7 @@ def test_news_count(client, create_news, home_url):
 def test_news_order(client, create_news, home_url):
     """Проверка, новости отображаются по дате."""
     response = client.get(home_url)
+    assert 'object_list' in response.context
     object_list = response.context['object_list']
     dates = [news.date for news in object_list]
     assert dates == sorted(dates, reverse=True)

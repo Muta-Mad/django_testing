@@ -44,16 +44,6 @@ def news(author):
 
 
 @pytest.fixture
-def news_id(news):
-    return (news.id,)
-
-
-@pytest.fixture
-def comment_id(comment):
-    return (comment.id,)
-
-
-@pytest.fixture
 def create_news(author):
     today = tz.now()
     News.objects.bulk_create([
