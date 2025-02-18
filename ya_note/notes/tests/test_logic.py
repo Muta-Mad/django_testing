@@ -50,14 +50,14 @@ class TestNoteCreation(TestCase):
 
     def test_duplicate_slug(self):
         """Проверка, нельзя создать заметку с дублирующимся slug."""
-        self.note = Note.objects.create(
+        note = Note.objects.create(
             title='Заголовок заметки',
             text='Текст заметки',
             slug='test-slug',
             author=self.user,
         )
         self.assertEqual(Note.objects.count(), 1)
-        self.form_data['slug'] = self.note.slug
+        self.form_data['slug'] = note.slug
         response = self.auth_client.post(self.url, data=self.form_data)
         self.assertFormError(
             response, 'form', 'slug', [self.form_data['slug'] + WARNING])
@@ -119,20 +119,16 @@ class TestNoteEditDelete(TestCase):
         """Проверка, другой пользователь не может
         редактировать чужую заметку.
         """
-        original_note = Note.objects.get(id=self.note.id)
-        original_title = original_note.title
-        original_text = original_note.text
-        original_slug = original_note.slug
-        original_author = original_note.author
+        original_note = Note.objects.get()
         response = self.other_user_client.post(
             self.edit_url, data=self.form_data
         )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        updated_note = Note.objects.get(id=self.note.id)
-        self.assertEqual(updated_note.title, original_title)
-        self.assertEqual(updated_note.text, original_text)
-        self.assertEqual(updated_note.slug, original_slug,)
-        self.assertEqual(updated_note.author, original_author)
+        updated_note = Note.objects.get()
+        self.assertEqual(updated_note.title, original_note.title)
+        self.assertEqual(updated_note.text, original_note.text)
+        self.assertEqual(updated_note.slug, original_note.slug)
+        self.assertEqual(updated_note.author, original_note.author)
 
     def test_other_user_cant_delete_note(self):
         """Проверка, что другой пользователь не может удалить чужую заметку."""

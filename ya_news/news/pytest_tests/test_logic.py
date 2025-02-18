@@ -80,13 +80,10 @@ def test_user_cant_edit_comment_of_anothers(
     reader_client, comment, form_data, edit_url
 ):
     """Проверка юзер не может редачить комментарии других"""
-    original_comment = Comment.objects.get(id=comment.id)
-    original_news = original_comment.news
-    original_author = original_comment.author
-    original_text = original_comment.text
+    original_comment = Comment.objects.get()
     response = reader_client.post(edit_url, data=form_data)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    updated_comment = Comment.objects.get(id=comment.id)
-    assert updated_comment.news == original_news
-    assert updated_comment.author == original_author
-    assert updated_comment.text == original_text
+    updated_comment = Comment.objects.get()
+    assert updated_comment.news == original_comment.news
+    assert updated_comment.author == original_comment.author
+    assert updated_comment.text == original_comment.text
