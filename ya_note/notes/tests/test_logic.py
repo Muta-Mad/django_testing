@@ -124,7 +124,7 @@ class TestNoteEditDelete(TestCase):
             self.edit_url, data=self.form_data
         )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        updated_note = Note.objects.get()
+        updated_note = Note.objects.get(id=original_note.id)
         self.assertEqual(updated_note.title, original_note.title)
         self.assertEqual(updated_note.text, original_note.text)
         self.assertEqual(updated_note.slug, original_note.slug)
